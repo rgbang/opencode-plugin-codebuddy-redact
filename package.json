@@ -7,6 +7,9 @@
   "exports": {
     ".": "./plugin/codebuddy-redact.mjs"
   },
+  "scripts": {
+    "test": "node test/verify.mjs"
+  },
   "keywords": [
     "opencode",
     "opencode-plugin",
@@ -18,6 +21,7 @@
   ],
   "files": [
     "plugin/",
+    "test/",
     "codebuddy-redaction.json",
     "opencode.example.json",
     "README.md"
@@ -26,11 +30,11 @@
   "author": "Richard Jacob Monde Gubangxa",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/richardgubangxa/codebuddy-redact-opencode.git"
+    "url": "git+https://github.com/rgbang/codebuddy-redact-opencode.git"
   },
-  "homepage": "https://github.com/richardgubangxa/codebuddy-redact-opencode#readme",
+  "homepage": "https://github.com/rgbang/codebuddy-redact-opencode#readme",
   "bugs": {
-    "url": "https://github.com/richardgubangxa/codebuddy-redact-opencode/issues"
+    "url": "https://github.com/rgbang/codebuddy-redact-opencode/issues"
   },
   "engines": {
     "node": ">=18"

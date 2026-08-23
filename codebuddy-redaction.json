@@ -1,5 +1,18 @@
 {
-  "_help": "Optional settings for the Code Buddy redaction guard. Put this file in your project root or in ~/.config/opencode/. Secrets and South African ID numbers are always masked when enabled; includePII also masks emails, phone numbers (incl. SA +27/0), SSNs and card numbers.",
+  "_README": "Code Buddy redaction settings. Copy this file to your project root OR to ~/.config/opencode/, delete the lines you don't need, and restart opencode. All fields are optional. Secrets and South African ID numbers are ALWAYS masked when enabled — the fields below only add to or fine-tune that.",
+
   "enabled": true,
-  "includePII": false
+  "includePII": false,
+
+  "_customWords": "YOUR OWN things to always mask — plain text, no regex. Great for project codenames, internal hostnames, or one specific token. Example below masks the word Project-Zeus and the host internal.acme.corp wherever they appear.",
+  "customWords": ["Project-Zeus", "internal.acme.corp"],
+
+  "_allowlist": "Things that LOOK like secrets but must NEVER be masked — e.g. a sample key you show in docs. Example below stops that fake AWS key from being masked.",
+  "allowlist": ["AKIAEXAMPLEKEY0000000"],
+
+  "_disableKinds": "Turn OFF categories you don't want. Example: [\"CREDIT-CARD\", \"PHONE\"] would stop masking cards and phone numbers. Leave empty [] to keep everything. Valid names: AWS-KEY, GITHUB-TOKEN, STRIPE-KEY, SLACK-TOKEN, GOOGLE-KEY, OPENAI-KEY, JWT, BEARER, PRIVATE-KEY, CONNECTION-STRING, SA-ID, SECRET, EMAIL, SSN, CREDIT-CARD, SA-PHONE, PHONE.",
+  "disableKinds": [],
+
+  "_customPatterns": "ADVANCED — your own regular expressions as strings (double the backslashes in JSON). Example: [\"\\\\bINT-\\\\d{6}\\\\b\"] would mask internal ticket ids like INT-004521. Invalid regexes are ignored.",
+  "customPatterns": []
 }

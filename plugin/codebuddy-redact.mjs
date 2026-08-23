@@ -21,13 +21,29 @@ import path from 'path';
 
 // ── Settings: defaults < global file < project file ──────────────────────────
 function loadSettings(directory) {
-  let s = { enabled: true, includePII: false };
+  let s = { enabled: true, includePII: false, customWords: [], customPatterns: [], allowlist: [], disableKinds: [] };
   const candidates = [
     path.join(os.homedir(), '.config', 'opencode', 'codebuddy-redaction.json'),
     directory ? path.join(directory, 'codebuddy-redaction.json') : null,
   ].filter(Boolean);
   for (const p of candidates) {
-    try { s = { ...s, ...JSON.parse(fs.readFileSync(p, 'utf8')) }; } catch { /* optional */ }
+    let raw;
+    try {
+      raw = fs.readFileSync(p, 'utf8');
+    } catch {
+      continue; // no settings file here — that's fine, defaults apply
+    }
+    try {
+      s = { ...s, ...JSON.parse(raw) };
+    } catch (e) {
+      // The file exists but is broken JSON — warn instead of silently ignoring,
+      // so a typo (a missing comma, a stray quote) doesn't leave the user
+      // wondering why their settings aren't taking effect.
+      console.warn(
+        `⚠ Code Buddy redaction: couldn't read ${p} — ` +
+        `check for a JSON typo (e.g. a missing comma). Using defaults for now. [${e.message}]`
+      );
+    }
   }
   return s;
 }
@@ -97,7 +113,20 @@ function isValidSAID(s) {
 export const CodebuddyRedact = async ({ directory } = {}) => {
   const settings = loadSettings(directory);
   if (!settings.enabled) return {};
-  const patterns = settings.includePII ? [...SECRET_PATTERNS, ...PII_PATTERNS] : SECRET_PATTERNS;
+
+  // ── Per-user adjustments (all from the settings file, no code) ──────────────
+  const disabled = new Set((settings.disableKinds || []).map((k) => String(k).toUpperCase()));
+  const allowSet = new Set(settings.allowlist || []);            // literal strings NEVER masked
+  const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const customPatterns = [];
+  for (const w of settings.customWords || []) {                  // literal strings ALWAYS masked
+    if (typeof w === 'string' && w.length >= 3) customPatterns.push(new RegExp(escapeRe(w), 'g'));
+  }
+  for (const rx of settings.customPatterns || []) {              // advanced: your own regex strings
+    try { customPatterns.push(new RegExp(rx, 'g')); } catch { /* skip invalid regex */ }
+  }
+  const patterns = (settings.includePII ? [...SECRET_PATTERNS, ...PII_PATTERNS] : SECRET_PATTERNS)
+    .filter(([kind]) => !disabled.has(kind));
 
   const root = directory || process.cwd();
   const seen = new Map();
@@ -125,18 +154,30 @@ export const CodebuddyRedact = async ({ directory } = {}) => {
   const redact = (text, tool, file) => {
     if (typeof text !== 'string' || text.length < 8) return text;
     let out = text;
-    out = out.replace(/\b\d{13}\b/g, (m) => (isValidSAID(m) ? placeholderFor(m, 'SA-ID', tool, file) : m));
+    // Your own words / regexes from settings — always masked (unless allow-listed).
+    for (const re of customPatterns) {
+      out = out.replace(re, (m) => (allowSet.has(m) ? m : placeholderFor(m, 'CUSTOM', tool, file)));
+    }
+    // South African ID numbers (validated), unless turned off in disableKinds.
+    if (!disabled.has('SA-ID')) {
+      out = out.replace(/\b\d{13}\b/g, (m) => (isValidSAID(m) && !allowSet.has(m) ? placeholderFor(m, 'SA-ID', tool, file) : m));
+    }
+    // Built-in secret / PII patterns.
     for (const [kind, re] of patterns) {
       out = out.replace(re, (m) => {
+        if (allowSet.has(m)) return m;
         if (kind === 'EMAIL' && /@(?:example|test|localhost|domain)\b/i.test(m)) return m;
         return placeholderFor(m, kind, tool, file);
       });
     }
-    out = out.replace(ASSIGN, (m, name, q, value) => {
-      if (isPlaceholder(value)) return m;
-      if (value.length < 12 && entropy(value) < 3) return m;
-      return m.replace(value, placeholderFor(value, 'SECRET', tool, file));
-    });
+    // Generic high-entropy assignments, unless turned off (kind: SECRET).
+    if (!disabled.has('SECRET')) {
+      out = out.replace(ASSIGN, (m, name, q, value) => {
+        if (allowSet.has(value) || isPlaceholder(value)) return m;
+        if (value.length < 12 && entropy(value) < 3) return m;
+        return m.replace(value, placeholderFor(value, 'SECRET', tool, file));
+      });
+    }
     return out;
   };
 

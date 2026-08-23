@@ -7,6 +7,26 @@
     "codebuddy-redactions": {
       "description": "Show what the redaction guard has masked so far",
       "template": "Read the file .codebuddy/redactions.jsonl and list what the redaction guard has masked: for each line show the kind, placeholder, and file. These are records only — no secret values are stored. If the file does not exist, tell me nothing has been redacted yet."
+    },
+    "codebuddy-redact-settings": {
+      "description": "View your current redaction settings and the options you can change",
+      "agent": "build",
+      "template": "Show me my current Code Buddy redaction setup. Read codebuddy-redaction.json from the project root, and from ~/.config/opencode/ (project overrides global). If neither exists, tell me I'm on the defaults: guard enabled, secrets and South African ID numbers masked, PII off, no custom words. Present it clearly as: (1) enabled on/off, (2) includePII on/off, (3) customWords, (4) allowlist, (5) disableKinds, (6) customPatterns. Then list the categories I could turn off via disableKinds: AWS-KEY, GITHUB-TOKEN, STRIPE-KEY, SLACK-TOKEN, GOOGLE-KEY, OPENAI-KEY, JWT, BEARER, PRIVATE-KEY, CONNECTION-STRING, SA-ID, SECRET, EMAIL, SSN, CREDIT-CARD, SA-PHONE, PHONE. Finally tell me I can change any of it by just asking you, or with /codebuddy-redact-add and /codebuddy-redact-allow. Do not print any secret values."
+    },
+    "codebuddy-redact-add": {
+      "description": "Add something to mask — a plain word, OR describe a pattern and it writes the regex for you",
+      "agent": "build",
+      "template": "The user wants to mask something. Their request: $ARGUMENTS. First decide which case it is:\n- CASE A (literal): they named exact word(s), a codename, a hostname, or a specific token to hide verbatim. Add each, as plain text, to the customWords array.\n- CASE B (pattern): they described the SHAPE of things to hide (e.g. 'anything like INT- then 6 digits', 'our internal ticket ids', 'emails at acme.com'). Write a correct JavaScript regular expression that matches it and add that as a string to the customPatterns array (JSON needs doubled backslashes, e.g. \"\\\\bINT-\\\\d{6}\\\\b\"). If unsure which case, ask me one short clarifying question.\nThen: (1) read codebuddy-redaction.json in the current project root; if missing, create it as {\"enabled\": true, \"includePII\": false, \"customWords\": [], \"customPatterns\": []}. (2) Append without removing or changing any other setting; skip items already present. (3) Keep the file valid JSON. (4) If you wrote a regex, explain in one plain-English sentence what it matches and give one example. (5) Show the updated lists and remind me to restart opencode."
+    },
+    "codebuddy-redact-allow": {
+      "description": "Add value(s) to the allowlist (never masked — for false positives)",
+      "agent": "build",
+      "template": "Update the Code Buddy redaction settings so these are NEVER masked (they look like secrets but are safe, e.g. sample keys): $ARGUMENTS. Steps: (1) read codebuddy-redaction.json in the current project root; if it does not exist, create it as {\"enabled\": true, \"includePII\": false, \"allowlist\": []}. (2) Append each given item to the allowlist array, skipping duplicates, and do NOT change any other setting. (3) Keep the file as valid JSON. (4) Show me the updated allowlist and remind me to restart opencode."
+    },
+    "codebuddy-redact-remove": {
+      "description": "Remove a rule you added earlier (a custom word, an allowlist entry, or a pattern)",
+      "agent": "build",
+      "template": "The user wants to remove a redaction rule they added earlier: $ARGUMENTS. Steps: (1) read codebuddy-redaction.json in the current project root; if it doesn't exist, tell me there are no custom rules yet and stop. (2) Look for the given item(s) in customWords, allowlist, and customPatterns and remove any that match the literal text. If an item isn't found, tell me. Do NOT change any other setting. (3) Keep the file valid JSON. (4) Show the updated lists and remind me to restart opencode. Important: this only removes MY OWN custom rules — it cannot turn off the built-in secret or South-African-ID detection. To turn a built-in category off, its name goes in disableKinds instead (offer to do that if that's what I meant)."
     }
   }
 }
