@@ -1,0 +1,38 @@
+{
+  "name": "opencode-plugin-codebuddy-redact",
+  "version": "1.0.0",
+  "description": "opencode plugin — automatically mask API keys, tokens, secrets and South African ID numbers before they reach the model. Deterministic, local, no AI, no network.",
+  "type": "module",
+  "main": "plugin/codebuddy-redact.mjs",
+  "exports": {
+    ".": "./plugin/codebuddy-redact.mjs"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "redaction",
+    "secrets",
+    "security",
+    "privacy",
+    "south-africa"
+  ],
+  "files": [
+    "plugin/",
+    "codebuddy-redaction.json",
+    "opencode.example.json",
+    "README.md"
+  ],
+  "license": "MIT",
+  "author": "Richard Jacob Monde Gubangxa",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/richardgubangxa/opencode-plugin-codebuddy-redact.git"
+  },
+  "homepage": "https://github.com/richardgubangxa/opencode-plugin-codebuddy-redact#readme",
+  "bugs": {
+    "url": "https://github.com/richardgubangxa/opencode-plugin-codebuddy-redact/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
