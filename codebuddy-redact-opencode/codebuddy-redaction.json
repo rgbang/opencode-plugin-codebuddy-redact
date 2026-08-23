@@ -1,5 +1,0 @@
-{
-  "_help": "Optional settings for the Code Buddy redaction guard. Put this file in your project root or in ~/.config/opencode/. Secrets and South African ID numbers are always masked when enabled; includePII also masks emails, phone numbers (incl. SA +27/0), SSNs and card numbers.",
-  "enabled": true,
-  "includePII": false
-}
