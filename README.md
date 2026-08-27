@@ -204,7 +204,23 @@ inside opencode — it shows exactly what's active.
 
 ## How it works (the honest version)
 
-It uses two opencode plugin hooks:
+The guard sits at the boundary of your machine. Raw text flows in; only masked
+text crosses to the cloud model — the real secret is stopped and never even
+logged:
+
+```
+  your machine                                        │  cloud
+  ──────────────────────────────────────────────────┐│
+   file an agent reads ─┐                            ││
+                        ├─►  Redaction Guard  ───────┼┼─►  AI model
+   text you type ───────┘    regex · Luhn · entropy  ││    sees <REDACTED>
+                                   │                  ││
+                                   ▼                  ││
+              real secret  ✕  stops here — never crosses
+              log: kind + placeholder only (never the value)
+```
+
+Under the hood it uses two opencode plugin hooks:
 - `tool.execute.after` — masks secrets in file/command output an agent reads.
 - `experimental.chat.messages.transform` — masks secrets you type into chat.
 
@@ -217,6 +233,14 @@ the file-read masking does not depend on it.
 The detection here (regex + Luhn checksum + entropy) is the **same brain** used
 by the standalone `codebuddy-redact` tool, which masks secrets in *any* AI tool
 (Cursor, ChatGPT, Claude Desktop, …) by cleaning your text before you paste it.
+One detector, many hooks — only the thin hook changes per surface:
+
+```
+   opencode plugin ─┐
+   standalone CLI  ─┼─►  detection core  (regex · Luhn · entropy)
+   clipboard guard ─┘         same rules on every surface
+```
+
 This opencode plugin is one "hook" onto that brain; the standalone is another.
 If you want automatic masking inside a different tool, you write a thin hook for
 that tool and reuse the same detection rules — you don't reinvent the detector.
