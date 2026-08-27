@@ -68,6 +68,11 @@ Then register it in your `~/.config/opencode/opencode.json`:
 
 ## Settings — adjust it without touching code
 
+> **You don't need to create anything to start.** The guard works out of the box
+> with safe defaults (secrets + SA IDs are masked). Settings are only for
+> *customizing* — and you don't even make the file yourself: just ask an agent
+> (below) and it creates and edits it for you. Hand-editing is the optional path.
+
 ### Easiest: just ask the AI (or use a command)
 
 Because opencode agents edit files, you don't have to touch JSON at all — tell
@@ -84,6 +89,7 @@ commands from `opencode.example.json` — a little control panel for the guard:
 | `/codebuddy-redact-add <word OR description>` | **Add** something to mask — a plain word, **or describe a pattern and the AI writes the regex for you** |
 | `/codebuddy-redact-allow <values>` | **Allow** value(s) to never mask (false positives) |
 | `/codebuddy-redact-remove <items>` | **Remove** a rule you added earlier (a custom word, an allowlist entry, or a pattern) |
+| `/codebuddy-redact-off` · `/codebuddy-redact-on` | **Switch** the whole guard off or back on |
 | `/codebuddy-redactions` | **View** what's already been masked (the log) |
 
 Full control — **view, add, remove, allow** — all in plain conversation. (These
@@ -220,13 +226,29 @@ logged:
               log: kind + placeholder only (never the value)
 ```
 
-Under the hood it uses two opencode plugin hooks:
+**What's a hook?** A function opencode calls at one moment in its own flow — like
+a checkpoint on the road the data travels. opencode pauses, hands your function
+the text, you clean it, and it continues. It only runs when triggered; it is not
+a background process.
+
+It uses two such hooks:
 - `tool.execute.after` — masks secrets in file/command output an agent reads.
 - `experimental.chat.messages.transform` — masks secrets you type into chat.
 
-Both rewrite the text in place before it's sent to the provider. The chat hook
-is an experimental engine API; it's stable on current opencode but may change —
-the file-read masking does not depend on it.
+The key part of the code is tiny — the hook rewrites the text *in place* before
+it ever leaves:
+
+```js
+// runs right after any tool returns, before the model sees the result
+'tool.execute.after': (input, output) => {
+  // output.output is the text about to go to the model — rewrite it in place
+  output.output = redact(output.output);   // secrets → <REDACTED:AWS-KEY-1>
+}
+```
+
+`redact()` is the deterministic detector (regex · Luhn · entropy) — no network,
+no AI. The chat hook is an experimental engine API; it's stable on current
+opencode but may change — the file-read masking does not depend on it.
 
 ## The same engine works beyond opencode
 

@@ -27,6 +27,16 @@
       "description": "Remove a rule you added earlier (a custom word, an allowlist entry, or a pattern)",
       "agent": "build",
       "template": "The user wants to remove a redaction rule they added earlier: $ARGUMENTS. Steps: (1) read codebuddy-redaction.json in the current project root; if it doesn't exist, tell me there are no custom rules yet and stop. (2) Look for the given item(s) in customWords, allowlist, and customPatterns and remove any that match the literal text. If an item isn't found, tell me. Do NOT change any other setting. (3) Keep the file valid JSON. (4) Show the updated lists and remind me to restart opencode. Important: this only removes MY OWN custom rules — it cannot turn off the built-in secret or South-African-ID detection. To turn a built-in category off, its name goes in disableKinds instead (offer to do that if that's what I meant)."
+    },
+    "codebuddy-redact-off": {
+      "description": "Turn the redaction guard OFF (stops masking until turned back on)",
+      "agent": "build",
+      "template": "Set \"enabled\": false in codebuddy-redaction.json in the current project root; if the file doesn't exist, create it as {\"enabled\": false}. Leave every other setting unchanged and keep the file valid JSON. Then WARN me clearly: the redaction guard is now OFF — secrets will NOT be masked — and I must restart opencode for this to take effect. Remind me that /codebuddy-redact-on turns it back on."
+    },
+    "codebuddy-redact-on": {
+      "description": "Turn the redaction guard back ON",
+      "agent": "build",
+      "template": "Set \"enabled\": true in codebuddy-redaction.json in the current project root; if the file doesn't exist, create it as {\"enabled\": true}. Leave every other setting unchanged and keep the file valid JSON. Then confirm the guard is ON and remind me to restart opencode for it to take effect."
     }
   }
 }
