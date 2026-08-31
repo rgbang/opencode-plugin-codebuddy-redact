@@ -17,7 +17,7 @@ model sees:  AWS_KEY=<REDACTED:AWS-KEY-1>      ← the real key never left your 
   time to `.codebuddy/redactions.jsonl`; the secret itself is never written.
 - **Manage it in plain English** — view, add, remove, and allow rules by just
   asking an agent (or with `/codebuddy-redact-*` commands). No JSON required.
-- **Verified** — ships with a 16-check test (`npm test`) proving it actually
+- **Verified** — ships with a 32-check test (`npm test`) proving it actually
   masks the right things and honours every setting.
 
 ## What it masks
@@ -199,11 +199,13 @@ Don't take it on trust — confirm it:
 npm test
 ```
 
-This runs 16 checks proving the guard actually masks secrets (in file reads
-*and* typed chat), SA IDs, and your custom words; honours `allowlist`,
-`disableKinds`, and `customPatterns`; warns on a broken settings file yet still
+This runs 32 checks proving the guard actually masks secrets (in file reads
+*and* typed chat), SA IDs (including calendar-correct dates and leap years),
+your custom words, generic high-entropy assignments, and tool-result output
+(including MCP servers); honours `allowlist`, `disableKinds`, and
+`customPatterns`; warns on a broken settings file yet still
 masks secrets (fail-safe); disables cleanly with `enabled:false`; and never
-writes a secret value to the log. All 16 must pass.
+writes a secret value to the log. All 32 must pass.
 
 To confirm your *own* live setup any time, run `/codebuddy-redact-settings`
 inside opencode — it shows exactly what's active.
@@ -233,7 +235,10 @@ a background process.
 
 It uses two such hooks:
 - `tool.execute.after` — masks secrets in file/command output an agent reads.
-- `experimental.chat.messages.transform` — masks secrets you type into chat.
+- `experimental.chat.messages.transform` — masks secrets you type into chat,
+  *and* re-masks tool results in the history — which is also what catches the
+  output of MCP servers (their text is only assembled *after* the tool hook
+  fires, so the chat hook is the backstop for them).
 
 The key part of the code is tiny — the hook rewrites the text *in place* before
 it ever leaves:
